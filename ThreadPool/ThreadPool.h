@@ -25,7 +25,9 @@ public:
 
 	void AddThread(const size_t n); //Increase number of threads in the pool
 
-	void StopPool(); //Stop poooling
+	void StopPool(); //Stop pooling
+
+	size_t ThreadsNumber();
 
 
 	template<typename T, typename... Args>

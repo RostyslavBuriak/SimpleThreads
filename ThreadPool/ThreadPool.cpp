@@ -134,3 +134,8 @@ void ThreadPool::AddThread(const size_t n) {
 
 	}
 }
+
+
+size_t ThreadPool::ThreadsNumber() {
+	return nthreads;
+}
