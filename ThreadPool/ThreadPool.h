@@ -8,6 +8,7 @@
 #include <queue>
 #include <vector>
 #include<functional>
+#include <atomic>
 
 class ThreadPool
 {
@@ -25,18 +26,18 @@ public:
 
 	void AddThread(const size_t n); //Increase number of threads in the pool
 
-	void StopPool(); //Stop pooling
+	void StopPool(); //Stop poooling
 
-	size_t ThreadsNumber();
+	size_t ThreadsNumber();//return the nuber of the working threads
 
 
 	template<typename T, typename... Args>
-	auto AddTask(T&& obj, Args&&... args) 
-		-> std::future<typename std::result_of<T(Args...)>::type> { //return future which contains function return value
+	auto AddTask(T&& obj, Args&&... args)
+		-> std::future<decltype(std::declval<T>()(std::declval<Args>()...))> { //return future which contains function return value
 
-		using  rtype = typename std::result_of<T(Args...)>::type; //get function return type
+		using rtype = decltype(std::declval<T>()(std::declval<Args>()...)); // deduce function return type
 
-		auto ptask = std::make_shared<std::packaged_task<rtype()>>( std::bind( std::forward<T>(obj), std::forward<Args>(args)... )); //shared pointer is needed because packaged_task has deleted copy-constructor 
+		auto ptask = std::make_shared<std::packaged_task<rtype()>>(std::bind(std::forward<T>(obj), std::forward<Args>(args)...)); //shared pointer is needed because packaged_task has deleted copy-constructor 
 																																		  //so we cant pass it to labmda by value
 
 		std::future<rtype> future = ptask->get_future(); //get future from packaged task
@@ -44,7 +45,7 @@ public:
 		{
 			std::lock_guard<std::mutex> lg(mtx); //needed to safely add task to tasks container
 
-			tasks.emplace([ptask](){ (*ptask)(); }); //add task to task container.
+			tasks.emplace([ptask]() { (*ptask)(); }); //add task to task container.
 
 		}
 
@@ -57,7 +58,7 @@ public:
 private:
 	size_t nthreads; //number of threads
 
-	bool stop; //variable to check if we have to stop threading
+	std::atomic<bool> stop; //variable to check if we have to stop threading
 
 	std::mutex mtx;
 
