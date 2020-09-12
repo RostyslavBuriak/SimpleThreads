@@ -1,14 +1,16 @@
-#pragma once
+#ifndef THREAD_POOL_HPP
+#define THREAD_POOL_HPP
 //Example of thread pool
 
-#include<thread>
-#include<condition_variable>
-#include<mutex>
-#include<future>
-#include <queue>
-#include <vector>
-#include<functional>
-#include <atomic>
+#include<thread> //for std::thread
+#include<condition_variable> //for std::conditional_variable
+#include<mutex> //for std::mutex
+#include<future> //for std::future
+#include<queue> //for std::queue
+#include<functional> //for std::bind
+#include<atomic> //for std::atomic
+#include<type_traits> //for std::invoke_result c++17
+#include"task_wrapper.hpp" //for task_wrapper
 
 class ThreadPool
 {
@@ -33,19 +35,17 @@ public:
 
 	template<typename T, typename... Args>
 	auto AddTask(T&& obj, Args&&... args)
-		-> std::future<decltype(std::declval<T>()(std::declval<Args>()...))> { //return future which contains function return value
+		-> std::future<typename std::invoke_result<T,Args...>::type> { //return future which contains function return value
 
-		using rtype = decltype(std::declval<T>()(std::declval<Args>()...)); // deduce function return type
+		using rtype = typename std::invoke_result<T,Args...>::type; // deduce function return type
 
-		auto ptask = std::make_shared<std::packaged_task<rtype()>>(std::bind(std::forward<T>(obj), std::forward<Args>(args)...)); //shared pointer is needed because packaged_task has deleted copy-constructor 
-																																		  //so we cant pass it to labmda by value
-
-		std::future<rtype> future = ptask->get_future(); //get future from packaged task
+		std::packaged_task<rtype()> ptask(std::bind(std::forward<T>(obj), std::forward<Args>(args)...));
+		std::future<rtype> future = ptask.get_future(); //get future from packaged task
 
 		{
 			std::lock_guard<std::mutex> lg(mtx); //needed to safely add task to tasks container
 
-			tasks.emplace([ptask]() { (*ptask)(); }); //add task to task container.
+			tasks.emplace(std::move(ptask)); //add task to task container.
 
 		}
 
@@ -64,9 +64,9 @@ private:
 
 	std::condition_variable cv;
 
-	std::queue< std::function<void()> > tasks; //container for tasks
+	std::queue<task_wrapper> tasks; //container for tasks
 
 	std::vector<std::thread> threads; //container for threads
 
 };
-
+#endif

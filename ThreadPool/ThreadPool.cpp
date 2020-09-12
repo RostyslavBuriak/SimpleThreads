@@ -10,7 +10,7 @@ ThreadPool::ThreadPool() :nthreads(1),stop(false) {
 				[this]() { //lambda for wating for tasks
 
 					while (!stop) {
-						std::function<void()> task; //create it before mutex lock 
+						task_wrapper task; //create it before mutex lock 
 
 						{
 							std::unique_lock<std::mutex> ul(mtx); //unique_lock is used for condition var
@@ -49,7 +49,7 @@ ThreadPool::ThreadPool(const size_t n):nthreads(n),stop(false) {
 
 				[this]() { //lambda for wating for tasks
 					while (!stop) {
-						std::function<void()> task; //create it before mutex lock 
+						task_wrapper task; //create it before mutex lock 
 
 						{
 							std::unique_lock<std::mutex> ul(mtx); //unique_lock is used for condition var
@@ -79,12 +79,10 @@ ThreadPool::ThreadPool(const size_t n):nthreads(n),stop(false) {
 }
 
 
-
 ThreadPool::~ThreadPool() {
 	if(!stop)
 		StopPool();
 }
-
 
 
 void ThreadPool::StopPool() {
@@ -112,7 +110,7 @@ void ThreadPool::AddThread(const size_t n) {
 				[this]() { //lambda for wating for tasks
 
 					while (!stop) {
-						std::function<void()> task; //create it before mutex lock 
+						task_wrapper task; //create it before mutex lock 
 
 						{
 							std::unique_lock<std::mutex> ul(mtx); //unique_lock is used for condition var
@@ -140,8 +138,6 @@ void ThreadPool::AddThread(const size_t n) {
 
 	}
 }
-
-
 size_t ThreadPool::ThreadsNumber() {
 	return nthreads;
 }
