@@ -33,9 +33,8 @@ public:
 	size_t ThreadsNumber();//return the nuber of the working threads
 
 
-	template<typename T, typename... Args>
-	auto AddTask(T&& obj, Args&&... args)
-		-> std::future<typename std::invoke_result<T,Args...>::type> { //return future which contains function return value
+	template<typename T, typename... Args>	
+	std::future<typename std::invoke_result<T,Args...>::type> AddTask(T&& obj, Args&&... args){ //return future which contains function return value
 
 		using rtype = typename std::invoke_result<T,Args...>::type; // deduce function return type
 
